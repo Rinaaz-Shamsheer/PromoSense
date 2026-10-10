@@ -341,24 +341,86 @@ print(df[numeric_columns].std(numeric_only=True).round(2))
 print("\nSkewness:")
 print(df[numeric_columns].skew(numeric_only=True).round(2))
 
-# Use the IQR rule to flag unusual retail-price observations.
-# Outliers are flagged for investigation, not removed automatically.
-q1 = df["retail_price"].quantile(0.25)
-q3 = df["retail_price"].quantile(0.75)
-iqr = q3 - q1
-lower_iqr_bound = q1 - 1.5 * iqr
-upper_iqr_bound = q3 + 1.5 * iqr
+# Check outliers separately within each primary product category.
+# This avoids comparing (for example) makeup prices directly with dress prices.
+# The IQR rule flags unusual values; it does not prove that a value is wrong.
+# Products are NOT deleted. Categories with fewer than 10 products are skipped
+# because their quartile limits may be unreliable with very small samples.
+MIN_CATEGORY_SIZE_FOR_OUTLIERS = 10
+OUTLIER_MULTIPLIER = 1.5
 
-df["retail_price_outlier_flag"] = (
-    (df["retail_price"] < lower_iqr_bound)
-    | (df["retail_price"] > upper_iqr_bound)
-)
+outlier_metrics = {
+    "retail_price": "retail_price_outlier_flag",
+    "discounted_price": "discounted_price_outlier_flag",
+    "historical_discount_pct": "discount_pct_outlier_flag",
+}
 
-outlier_count = int(df["retail_price_outlier_flag"].sum())
+# Start with False flags; categories too small for a reliable check stay False.
+for flag_column in outlier_metrics.values():
+    df[flag_column] = False
 
-print(f"\nRetail-price IQR lower bound: {lower_iqr_bound:.2f}")
-print(f"Retail-price IQR upper bound: {upper_iqr_bound:.2f}")
-print(f"Retail-price outliers flagged (not removed): {outlier_count}")
+category_outlier_records = []
+
+for category, category_rows in df.groupby("primary_category", dropna=False):
+    category_index = category_rows.index
+    category_size = len(category_rows)
+    enough_products = category_size >= MIN_CATEGORY_SIZE_FOR_OUTLIERS
+
+    for metric_column, flag_column in outlier_metrics.items():
+        values = category_rows[metric_column].dropna()
+
+        if not enough_products or len(values) < MIN_CATEGORY_SIZE_FOR_OUTLIERS:
+            q1 = q3 = iqr = lower_bound = upper_bound = np.nan
+            outlier_count_for_metric = 0
+            # Do not label these rows as non-outliers; the category is too small
+            # to evaluate reliably. The summary file records that it was skipped.
+        else:
+            q1 = values.quantile(0.25)
+            q3 = values.quantile(0.75)
+            iqr = q3 - q1
+            lower_bound = q1 - OUTLIER_MULTIPLIER * iqr
+            upper_bound = q3 + OUTLIER_MULTIPLIER * iqr
+
+            metric_outliers = (
+                (df.loc[category_index, metric_column] < lower_bound)
+                | (df.loc[category_index, metric_column] > upper_bound)
+            ).fillna(False)
+            df.loc[category_index, flag_column] = metric_outliers
+            outlier_count_for_metric = int(metric_outliers.sum())
+
+        category_outlier_records.append({
+            "primary_category": category,
+            "metric": metric_column,
+            "category_product_count": category_size,
+            "valid_values_checked": int(values.count()),
+            "check_status": (
+                "Checked" if enough_products and len(values) >= MIN_CATEGORY_SIZE_FOR_OUTLIERS
+                else "Skipped - fewer than 10 valid values"
+            ),
+            "q1": q1,
+            "q3": q3,
+            "iqr": iqr,
+            "lower_iqr_bound": lower_bound,
+            "upper_iqr_bound": upper_bound,
+            "outlier_count": outlier_count_for_metric,
+            "outlier_percent_of_category": (
+                round(outlier_count_for_metric / len(values) * 100, 2)
+                if len(values) else 0.0
+            ),
+        })
+
+category_outlier_summary = pd.DataFrame(category_outlier_records)
+retail_outlier_count = int(df["retail_price_outlier_flag"].sum())
+discounted_outlier_count = int(df["discounted_price_outlier_flag"].sum())
+discount_pct_outlier_count = int(df["discount_pct_outlier_flag"].sum())
+# Keep the existing report variable name, now representing category-wise flags.
+outlier_count = retail_outlier_count
+
+print("\nCategory-wise IQR outlier analysis (outliers are flagged, not deleted):")
+print(f"Retail-price outliers flagged: {retail_outlier_count}")
+print(f"Discounted-price outliers flagged: {discounted_outlier_count}")
+print(f"Discount-percentage outliers flagged: {discount_pct_outlier_count}")
+print(f"Categories with fewer than {MIN_CATEGORY_SIZE_FOR_OUTLIERS} valid values are skipped.")
 
 # Calculate correlations among numeric columns. Correlation measures
 # association, not causation.
@@ -393,6 +455,23 @@ def save_csv(dataframe, filename):
 # ------------------------------------------------------------
 # Use this file for product-level reports, filters, and drill-downs.
 save_csv(df, "01_cleaned_flipkart_products.csv")
+
+# ------------------------------------------------------------
+# OUTPUT 14: CATEGORY-WISE OUTLIER SUMMARY
+# ------------------------------------------------------------
+# This table contains the IQR limits and outlier counts for each category
+# and metric. It is useful for an APEX report or category comparison chart.
+category_outlier_summary = category_outlier_summary.round(2)
+save_csv(category_outlier_summary, "14_category_wise_outlier_summary.csv")
+
+# OUTPUT 15: PRODUCTS FLAGGED AS PRICE/DISCOUNT OUTLIERS
+outlier_flag_columns = list(outlier_metrics.values())
+flagged_outlier_products = df[df[outlier_flag_columns].any(axis=1)][
+    ["product_id", "product_name", "primary_category", "brand",
+     "retail_price", "discounted_price", "historical_discount_percent"]
+    + outlier_flag_columns
+].copy()
+save_csv(flagged_outlier_products, "15_flagged_outlier_products.csv")
 
 
 # ------------------------------------------------------------
@@ -642,6 +721,8 @@ expected_files = [
     "11_top_15_categories.csv",
     "12_top_20_brands.csv",
     "13_category_brand_performance.csv",
+    "14_category_wise_outlier_summary.csv",
+    "15_flagged_outlier_products.csv",
 ]
 
 # Missing values can remain in overall_rating by design. Category and
@@ -664,7 +745,9 @@ report_lines = [
     f"Rows removed for discounted price above retail price: {removed_discount_logic:,}",
     f"Exact duplicate rows removed: {removed_duplicates:,}",
     f"Invalid ratings changed to missing: {invalid_rating_count:,}",
-    f"Retail-price outliers flagged (not deleted): {outlier_count:,}",
+    f"Category-wise retail-price outliers flagged (not deleted): {retail_outlier_count:,}",
+    f"Category-wise discounted-price outliers flagged (not deleted): {discounted_outlier_count:,}",
+    f"Category-wise discount-percentage outliers flagged (not deleted): {discount_pct_outlier_count:,}",
     "",
     "3. PRICING METRICS",
     f"Average retail price: {df['retail_price'].mean():,.2f}",
@@ -712,7 +795,7 @@ for filename in expected_files:
 
 report_lines.extend([
     "",
-    "9. ORACLE APEX DASHBOARD SUGGESTIONS",
+    "11. ORACLE APEX DASHBOARD SUGGESTIONS",
     "03_category_summary.csv: bar charts for product count and average prices by category.",
     "04_brand_summary.csv: top brands and average rating comparisons.",
     "05_discount_analysis.csv: largest discount amounts and percentages.",
@@ -724,8 +807,10 @@ report_lines.extend([
     "11_top_15_categories.csv: most represented categories.",
     "12_top_20_brands.csv: most represented brands.",
     "13_category_brand_performance.csv: compare leading brands within leading categories.",
+    "14_category_wise_outlier_summary.csv: category-specific IQR limits and outlier counts.",
+    "15_flagged_outlier_products.csv: individual products flagged for unusual prices/discounts.",
     "",
-    "10. INTERPRETATION AND LIMITATIONS",
+    "12. INTERPRETATION AND LIMITATIONS",
     "This dataset describes listed prices, discounts, categories, brands, and ratings.",
     "It does not by itself contain actual sales, conversion, cost, or profit data.",
     "Listed discounts must not be interpreted as proof of increased sales or profitability.",

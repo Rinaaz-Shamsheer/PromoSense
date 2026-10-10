@@ -1,0 +1,4 @@
+﻿price_band,product_count,avg_retail_price,min_retail_price,max_retail_price,avg_discount_pct,avg_discounted_price,avg_rating,product_percentage
+Budget,5705,529.04,35.0,799.0,0.33,344.47,3.72,35.24
+Mid-Range,5087,1122.55,800.0,1525.0,0.45,613.14,3.82,31.43
+Premium,5395,8268.29,1526.0,571230.0,0.41,5752.84,3.89,33.33

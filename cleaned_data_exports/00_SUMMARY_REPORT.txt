@@ -1,0 +1,96 @@
+PROMOSENSE - DATA PREPROCESSING AND EDA SUMMARY REPORT
+Generated: 2026-10-10 14:21:04
+
+1. DATASET OVERVIEW
+Input file: flipkart_com-ecommerce_sample.csv
+Rows in original selected dataset: 20,000
+Rows after cleaning: 16,187
+Columns in cleaned dataset: 14
+
+2. CLEANING ACTIONS
+Rows removed for missing product name: 0
+Rows removed for missing prices: 78
+Rows removed for non-positive prices: 0
+Rows removed for discounted price above retail price: 0
+Exact duplicate rows removed: 3,735
+Invalid ratings changed to missing: 0
+Retail-price outliers flagged (not deleted): 1,819
+
+3. PRICING METRICS
+Average retail price: 3,294.99
+Median retail price: 1,000.00
+Average discounted price: 2,231.47
+Average discount amount: 1,063.52
+Average discount percentage: 39.46%
+Minimum discount percentage: 0.00%
+Maximum discount percentage: 96.53%
+
+4. CATEGORY AND BRAND OVERVIEW
+Number of categories: 262
+Most common category: Clothing (4,598 products)
+Number of brands, including Unknown: 3,486
+Most common brand: Unknown (4,706 products)
+
+5. RATINGS
+Products with valid ratings: 1,789
+Rating coverage: 11.05%
+Average rating: 3.80
+
+6. PRICE BAND THRESHOLDS
+33.33rd percentile retail price: 799.00
+66.67th percentile retail price: 1525.00
+Note: bands are relative to this dataset and may change when the data changes.
+
+7. REMAINING MISSING VALUES
+product_id: 0
+product_name: 0
+product_category_tree: 0
+retail_price: 0
+discounted_price: 0
+brand: 0
+overall_rating: 14,398
+primary_category: 0
+discount_amount: 0
+historical_discount_pct: 0
+historical_discount_percent: 0
+price_band: 0
+discount_tier: 0
+retail_price_outlier_flag: 0
+
+8. OUTPUT FILES
+OK - 01_cleaned_flipkart_products.csv (3538.65 KB)
+OK - 02_price_distribution.csv (1887.70 KB)
+OK - 03_category_summary.csv (23.22 KB)
+OK - 04_brand_summary.csv (161.00 KB)
+OK - 05_discount_analysis.csv (1868.62 KB)
+OK - 06_price_band_segmentation.csv (0.32 KB)
+OK - 07_category_priceband_matrix.csv (11.53 KB)
+OK - 08_rating_distribution.csv (0.29 KB)
+OK - 09_category_discount_tier.csv (12.58 KB)
+OK - 10_correlation_analysis.csv (1010.16 KB)
+OK - 10b_correlation_coefficients.csv (0.34 KB)
+OK - 11_top_15_categories.csv (0.43 KB)
+OK - 12_top_20_brands.csv (0.39 KB)
+OK - 13_category_brand_performance.csv (0.79 KB)
+
+9. ORACLE APEX DASHBOARD SUGGESTIONS
+03_category_summary.csv: bar charts for product count and average prices by category.
+04_brand_summary.csv: top brands and average rating comparisons.
+05_discount_analysis.csv: largest discount amounts and percentages.
+06_price_band_segmentation.csv: Budget/Mid-Range/Premium distribution.
+07_category_priceband_matrix.csv: category versus price-band heatmap or stacked bars.
+08_rating_distribution.csv: product rating frequency chart.
+09_category_discount_tier.csv: discount tier comparison by category.
+10_correlation_analysis.csv: scatter plots of prices, discounts, and ratings.
+11_top_15_categories.csv: most represented categories.
+12_top_20_brands.csv: most represented brands.
+13_category_brand_performance.csv: compare leading brands within leading categories.
+
+10. INTERPRETATION AND LIMITATIONS
+This dataset describes listed prices, discounts, categories, brands, and ratings.
+It does not by itself contain actual sales, conversion, cost, or profit data.
+Listed discounts must not be interpreted as proof of increased sales or profitability.
+Correlation does not establish causation. An A/B test needs a defined treatment,
+control group, outcome metric, sample-size plan, and experiment data.
+
+END OF REPORT

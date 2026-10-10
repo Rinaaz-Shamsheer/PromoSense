@@ -1,0 +1,19 @@
+﻿category,brand,product_count,avg_retail_price,avg_discount_pct,avg_rating
+Automotive,Allure Auto,468,4215.59,0.66,
+Automotive,Speedwav,129,1338.19,0.48,
+Beauty and Personal Care,Unknown,543,591.86,0.17,3.47
+Clothing,Black,142,870.61,0.62,3.96
+Clothing,Regular,254,1026.14,0.48,3.79
+Clothing,Slim,203,1621.98,0.47,3.67
+Clothing,Unknown,2122,1328.26,0.4,3.79
+Clothing,Voylla,4,769.0,0.18,
+Clothing,White,113,753.73,0.62,3.73
+Computers,Unknown,1,2000.0,0.18,
+Computers,White,1,449.0,0.33,
+Footwear,Unknown,726,1996.59,0.36,3.57
+Home Decor & Festive Needs,Unknown,29,1730.55,0.44,3.17
+Jewellery,Karatcraft,211,37077.78,0.28,
+Jewellery,Radiant Bay,132,34164.71,0.2,
+Jewellery,Voylla,263,866.84,0.25,3.17
+Kitchen & Dining,Unknown,282,564.67,0.57,4.89
+Watches,Unknown,480,3037.95,0.16,3.92
